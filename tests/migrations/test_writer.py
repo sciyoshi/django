@@ -308,6 +308,13 @@ class WriterTests(SimpleTestCase):
             "default=migrations.test_writer.IntEnum(1))"
         )
 
+        string, imports = MigrationWriter.serialize(TextEnum)
+        self.assertEqual(
+            string,
+            'enum.IntEnum("TextEnum", [("A", "a-value"), '
+            '("B", "value-b")], qualname="TextEnum", module="migrations.test_writer")')
+        self.assertEqual(imports, set("import enum"))
+
     def test_serialize_uuid(self):
         self.assertSerializedEqual(uuid.uuid1())
         self.assertSerializedEqual(uuid.uuid4())

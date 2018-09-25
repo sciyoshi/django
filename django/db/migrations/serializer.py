@@ -264,6 +264,22 @@ class TypeSerializer(BaseSerializer):
                 return "%s.%s" % (module, self.value.__name__), {"import %s" % module}
 
 
+class EnumTypeSerializer(BaseSerializer):
+    def serialize(self):
+        base = self.value.__base__
+        items = [(el._name_, el._value_) for el in self.value.__members__.values()]
+        m_string, m_imports = serializer_factory(items).serialize()
+        imports = {'import %s' % base.__module__, *m_imports}
+        return "%s.%s(%s, %s, module=%s, qualname=%s)" % (
+            base.__module__,
+            base.__qualname__,
+            repr(self.value.__name__),
+            m_string,
+            repr(self.value.__module__),
+            repr(self.value.__qualname__)
+        ), imports
+
+
 class UUIDSerializer(BaseSerializer):
     def serialize(self):
         return "uuid.%s" % repr(self.value), {"import uuid"}
@@ -284,6 +300,8 @@ def serializer_factory(value):
         return ModelManagerSerializer(value)
     if isinstance(value, Operation):
         return OperationSerializer(value)
+    if isinstance(value, type) and issubclass(value, enum.Enum):
+        return EnumTypeSerializer(value)
     if isinstance(value, type):
         return TypeSerializer(value)
     # Anything that knows how to deconstruct itself.
